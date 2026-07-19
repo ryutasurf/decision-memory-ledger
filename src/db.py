@@ -4,6 +4,7 @@ import uuid
 from contextlib import contextmanager
 
 import psycopg
+from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
 
 from .embeddings import VECTOR_DIMENSIONS
@@ -12,7 +13,13 @@ from .embeddings import VECTOR_DIMENSIONS
 @contextmanager
 def connection():
     database_url = os.environ["DATABASE_URL"]
-    with psycopg.connect(database_url, row_factory=dict_row) as conn:
+    connection_args = conninfo_to_dict(database_url)
+    # CockroachDB's copied connection string can reference a certificate file
+    # on the developer's computer. Lambda does not have that file, so use its
+    # trusted system certificate store while retaining full TLS verification.
+    connection_args["sslrootcert"] = "system"
+    connection_args.setdefault("sslmode", "verify-full")
+    with psycopg.connect(**connection_args, row_factory=dict_row) as conn:
         yield conn
 
 
