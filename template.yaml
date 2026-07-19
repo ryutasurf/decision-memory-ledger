@@ -17,7 +17,7 @@ Resources:
     Properties:
       CodeUri: .
       Handler: src.app.handler
-      Runtime: python3.13
+      Runtime: python3.14
       MemorySize: 1024
       Timeout: 30
       Environment:
@@ -40,4 +40,3 @@ Resources:
 Outputs:
   DemoUrl:
     Value: !GetAtt DecisionMemoryApiUrl.FunctionUrl
-
