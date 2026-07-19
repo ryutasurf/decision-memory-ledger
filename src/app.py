@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -47,4 +48,15 @@ def run_audit(payload: AuditRequest):
     return {**result, "retrieved_memories": memories}
 
 
-handler = Mangum(app, lifespan="off")
+_adapter = Mangum(app, lifespan="off")
+
+
+def handler(event, context):
+    """Run Mangum with an explicit loop for Python 3.14 Lambda runtimes."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return _adapter(event, context)
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
