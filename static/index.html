@@ -23,6 +23,7 @@
   <div class="grid">
     <section>
       <h2>Record a decision</h2>
+      <input id="writeToken" type="password" autocomplete="off" placeholder="Write passphrase">
       <input id="title" placeholder="Decision title">
       <textarea id="objective" placeholder="True objective"></textarea>
       <textarea id="observations" placeholder="Observed facts, one per line"></textarea>
@@ -40,11 +41,15 @@
   </div>
   <script>
     const lines = id => document.getElementById(id).value.split('\n').filter(Boolean);
+    const writeHeaders = () => ({
+      'content-type':'application/json',
+      'x-write-token':document.getElementById('writeToken').value
+    });
     async function recordDecision(){
       const payload={title:title.value,objective:objective.value,observations:lines('observations'),interpretation:interpretation.value,counterevidence:[],invalidation_conditions:[],action:action.value,regime:'unspecified'};
       output.textContent='Saving memory…';
       try {
-        const response=await fetch('/decisions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+        const response=await fetch('/decisions',{method:'POST',headers:writeHeaders(),body:JSON.stringify(payload)});
         const data=await response.json();
         if(!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
         output.textContent='Memory saved.\n\n'+JSON.stringify(data,null,2);
@@ -56,7 +61,7 @@
       output.textContent='Retrieving memory…';
       const payload={question:question.value,observations:lines('current')};
       try {
-        const response=await fetch('/audit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+        const response=await fetch('/audit',{method:'POST',headers:writeHeaders(),body:JSON.stringify(payload)});
         const data=await response.json();
         if(!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
         output.textContent=JSON.stringify(data,null,2);
