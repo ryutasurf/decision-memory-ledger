@@ -42,14 +42,28 @@
     const lines = id => document.getElementById(id).value.split('\n').filter(Boolean);
     async function recordDecision(){
       const payload={title:title.value,objective:objective.value,observations:lines('observations'),interpretation:interpretation.value,counterevidence:[],invalidation_conditions:[],action:action.value,regime:'unspecified'};
-      output.textContent=JSON.stringify(await (await fetch('/decisions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})).json(),null,2);
+      output.textContent='Saving memory…';
+      try {
+        const response=await fetch('/decisions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
+        output.textContent='Memory saved.\n\n'+JSON.stringify(data,null,2);
+      } catch(error) {
+        output.textContent='Could not save memory:\n'+error.message;
+      }
     }
     async function runAudit(){
       output.textContent='Retrieving memory…';
       const payload={question:question.value,observations:lines('current')};
-      output.textContent=JSON.stringify(await (await fetch('/audit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})).json(),null,2);
+      try {
+        const response=await fetch('/audit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.detail || `Request failed (${response.status})`);
+        output.textContent=JSON.stringify(data,null,2);
+      } catch(error) {
+        output.textContent='Audit failed:\n'+error.message;
+      }
     }
   </script>
 </body>
 </html>
-
