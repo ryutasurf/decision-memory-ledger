@@ -25,7 +25,9 @@ Resources:
           DATABASE_URL: !Ref DatabaseUrl
           BEDROCK_EMBED_MODEL_ID: !Ref BedrockEmbedModelId
           BEDROCK_CHAT_MODEL_ID: !Ref BedrockChatModelId
-          ALLOW_LOCAL_EMBEDDINGS: 'false'
+          # Keep the public demo usable when a new AWS account has not yet
+          # completed the Marketplace subscription for the embedding model.
+          ALLOW_LOCAL_EMBEDDINGS: 'true'
       Policies:
         - Statement:
             - Effect: Allow
