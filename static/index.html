@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Decision Memory Ledger</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+    body { max-width: 900px; margin: 0 auto; padding: 48px 20px; background:#07111f; color:#e9f0fa; }
+    h1 { font-size: clamp(2.2rem,6vw,4.5rem); line-height:.95; margin-bottom:16px; }
+    .tag { color:#65d7c0; letter-spacing:.14em; text-transform:uppercase; font-weight:700; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:32px; }
+    section { background:#101d2f; border:1px solid #263a54; border-radius:18px; padding:20px; }
+    textarea,input { width:100%; box-sizing:border-box; margin:6px 0 12px; padding:12px; border-radius:10px; border:1px solid #39516e; background:#07111f; color:white; }
+    button { border:0; border-radius:999px; padding:12px 18px; background:#65d7c0; color:#07111f; font-weight:800; cursor:pointer; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; color:#b8cbe2; }
+  </style>
+</head>
+<body>
+  <p class="tag">Agentic memory for human judgment</p>
+  <h1>Decisions should remember why they changed.</h1>
+  <p>Store objectives, evidence, counterevidence, actions and invalidation conditions. Retrieve similar decisions by meaning, then audit what changed.</p>
+  <div class="grid">
+    <section>
+      <h2>Record a decision</h2>
+      <input id="title" placeholder="Decision title">
+      <textarea id="objective" placeholder="True objective"></textarea>
+      <textarea id="observations" placeholder="Observed facts, one per line"></textarea>
+      <textarea id="interpretation" placeholder="Interpretation"></textarea>
+      <textarea id="action" placeholder="Action taken"></textarea>
+      <button onclick="recordDecision()">Commit memory</button>
+    </section>
+    <section>
+      <h2>Audit a new case</h2>
+      <textarea id="question" placeholder="What decision should be audited?"></textarea>
+      <textarea id="current" placeholder="Current observations, one per line"></textarea>
+      <button onclick="runAudit()">Retrieve & audit</button>
+      <pre id="output">The result will show retrieved memories and what changed.</pre>
+    </section>
+  </div>
+  <script>
+    const lines = id => document.getElementById(id).value.split('\n').filter(Boolean);
+    async function recordDecision(){
+      const payload={title:title.value,objective:objective.value,observations:lines('observations'),interpretation:interpretation.value,counterevidence:[],invalidation_conditions:[],action:action.value,regime:'unspecified'};
+      output.textContent=JSON.stringify(await (await fetch('/decisions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})).json(),null,2);
+    }
+    async function runAudit(){
+      output.textContent='Retrieving memory…';
+      const payload={question:question.value,observations:lines('current')};
+      output.textContent=JSON.stringify(await (await fetch('/audit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})).json(),null,2);
+    }
+  </script>
+</body>
+</html>
+
