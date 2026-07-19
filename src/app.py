@@ -1,7 +1,10 @@
 import asyncio
+import hmac
+import os
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from mangum import Mangum
 
@@ -11,6 +14,12 @@ from .embeddings import embed
 from .models import AuditRequest, AuditResponse, DecisionCreate
 
 app = FastAPI(title="Decision Memory Ledger", version="0.1.0")
+
+
+def require_write_token(x_write_token: Annotated[str | None, Header()] = None) -> None:
+    expected = os.getenv("API_WRITE_TOKEN", "")
+    if not expected or not x_write_token or not hmac.compare_digest(x_write_token, expected):
+        raise HTTPException(status_code=401, detail="Invalid write passphrase")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -23,13 +32,13 @@ def health():
     return {"status": "ok", "memory": "CockroachDB", "agent": "AWS Bedrock"}
 
 
-@app.post("/schema/init")
+@app.post("/schema/init", dependencies=[Depends(require_write_token)])
 def schema_init():
     init_schema()
     return {"status": "initialized"}
 
 
-@app.post("/decisions")
+@app.post("/decisions", dependencies=[Depends(require_write_token)])
 def decisions(payload: DecisionCreate, supersedes: str | None = None):
     data = payload.model_dump()
     text = "\n".join([payload.title, payload.objective, *payload.observations, payload.interpretation, payload.action])
@@ -39,7 +48,7 @@ def decisions(payload: DecisionCreate, supersedes: str | None = None):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.post("/audit", response_model=AuditResponse)
+@app.post("/audit", response_model=AuditResponse, dependencies=[Depends(require_write_token)])
 def run_audit(payload: AuditRequest):
     query = "\n".join([payload.question, *payload.observations])
     memories = search_memories(embed(query))
