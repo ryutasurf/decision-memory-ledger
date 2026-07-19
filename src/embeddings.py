@@ -24,19 +24,35 @@ def _local_embedding(text: str) -> list[float]:
 
 
 def embed(text: str) -> list[float]:
-    model_id = os.getenv("BEDROCK_EMBED_MODEL_ID", "amazon.titan-embed-text-v2:0")
+    model_id = os.getenv("BEDROCK_EMBED_MODEL_ID", "cohere.embed-multilingual-v3")
     try:
         client = boto3.client("bedrock-runtime", region_name=os.getenv("AWS_REGION", "us-east-1"))
+        if model_id.startswith("cohere.embed"):
+            request = {
+                "texts": [text],
+                "input_type": "search_document",
+                "embedding_types": ["float"],
+            }
+        else:
+            request = {
+                "inputText": text,
+                "dimensions": VECTOR_DIMENSIONS,
+                "normalize": True,
+            }
         response = client.invoke_model(
             modelId=model_id,
             contentType="application/json",
             accept="application/json",
-            body=json.dumps({"inputText": text, "dimensions": VECTOR_DIMENSIONS, "normalize": True}),
+            body=json.dumps(request),
         )
         payload = json.loads(response["body"].read())
+        if model_id.startswith("cohere.embed"):
+            embeddings = payload["embeddings"]
+            if isinstance(embeddings, dict):
+                return embeddings["float"][0]
+            return embeddings[0]
         return payload["embedding"]
     except Exception:
         if os.getenv("ALLOW_LOCAL_EMBEDDINGS", "false").lower() == "true":
             return _local_embedding(text)
         raise
-
