@@ -5,6 +5,11 @@ Parameters:
   DatabaseUrl:
     Type: String
     NoEcho: true
+  ApiWriteToken:
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    Description: Passphrase required for write and audit requests
   BedrockEmbedModelId:
     Type: String
     Default: cohere.embed-multilingual-v3
@@ -23,6 +28,7 @@ Resources:
       Environment:
         Variables:
           DATABASE_URL: !Ref DatabaseUrl
+          API_WRITE_TOKEN: !Ref ApiWriteToken
           BEDROCK_EMBED_MODEL_ID: !Ref BedrockEmbedModelId
           BEDROCK_CHAT_MODEL_ID: !Ref BedrockChatModelId
           # Keep the public demo usable when a new AWS account has not yet
