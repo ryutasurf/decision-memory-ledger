@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Decision Memory Ledger - agentic judgment memory on CockroachDB and AWS
+Parameters:
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+  BedrockEmbedModelId:
+    Type: String
+    Default: amazon.titan-embed-text-v2:0
+  BedrockChatModelId:
+    Type: String
+    Default: amazon.nova-lite-v1:0
+Resources:
+  DecisionMemoryApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src.app.handler
+      Runtime: python3.13
+      MemorySize: 1024
+      Timeout: 30
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          BEDROCK_EMBED_MODEL_ID: !Ref BedrockEmbedModelId
+          BEDROCK_CHAT_MODEL_ID: !Ref BedrockChatModelId
+          ALLOW_LOCAL_EMBEDDINGS: 'false'
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins: ['*']
+          AllowMethods: ['GET', 'POST']
+Outputs:
+  DemoUrl:
+    Value: !GetAtt DecisionMemoryApiUrl.FunctionUrl
+
