@@ -47,5 +47,4 @@ def run_audit(payload: AuditRequest):
     return {**result, "retrieved_memories": memories}
 
 
-handler = Mangum(app)
-
+handler = Mangum(app, lifespan="off")
